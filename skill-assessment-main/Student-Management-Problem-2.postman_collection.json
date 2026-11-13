@@ -1,0 +1,242 @@
+{
+  "info": {
+    "_postman_id": "d1f938a2-e3dd-4ab6-9c2a-0b0fc39582f7",
+    "name": "Student Management - Problem 2",
+    "description": "Run Login first, then run student requests in order. Login stores authentication cookies. Create stores the new student ID for subsequent requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login succeeds', () => pm.response.to.have.status(200));",
+              "const cookieHeaders = pm.response.headers.all().filter((h) => h.key.toLowerCase() === 'set-cookie').map((h) => h.value);",
+              "for (const name of ['accessToken', 'refreshToken', 'csrfToken']) {",
+              "  let value;",
+              "  cookieHeaders.forEach((header) => {",
+              "    const match = header.match(new RegExp('^' + name + '=([^;]*)'));",
+              "    if (match && match[1]) value = match[1];",
+              "  });",
+              "  if (value) pm.collectionVariables.set(name, value);",
+              "}",
+              "pm.test('Authentication cookies were captured', () => {",
+              "  pm.expect(pm.collectionVariables.get('accessToken')).to.be.ok;",
+              "  pm.expect(pm.collectionVariables.get('csrfToken')).to.be.ok;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "List students",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/students"
+      }
+    },
+    {
+      "name": "Create student",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('testEmail', 'postman-' + pm.variables.replaceIn('{{$guid}}') + '@example.test');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Student created', () => pm.response.to.have.status(201));",
+              "const response = pm.response.json();",
+              "pm.test('Create response includes student ID', () => pm.expect(response.id).to.be.a('number'));",
+              "if (response.id) pm.collectionVariables.set('studentId', response.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Test Student\",\n  \"email\": \"{{testEmail}}\",\n  \"gender\": \"Female\",\n  \"dob\": \"2010-01-15\",\n  \"phone\": \"5550100\",\n  \"class\": \"Grade 1\",\n  \"section\": \"A\",\n  \"roll\": \"101\",\n  \"admissionDate\": \"2026-11-14\",\n  \"fatherName\": \"Postman Test Parent\",\n  \"fatherPhone\": \"5550101\",\n  \"motherName\": \"\",\n  \"motherPhone\": \"\",\n  \"guardianName\": \"Postman Test Parent\",\n  \"guardianPhone\": \"5550101\",\n  \"relationOfGuardian\": \"Father\",\n  \"currentAddress\": \"123 Postman Test Street, Example City\",\n  \"permanentAddress\": \"123 Postman Test Street, Example City\",\n  \"systemAccess\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/students"
+      }
+    },
+    {
+      "name": "Get created student",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}"
+      }
+    },
+    {
+      "name": "Update created student",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Updated Student\",\n  \"email\": \"{{testEmail}}\",\n  \"gender\": \"Female\",\n  \"dob\": \"2010-01-15\",\n  \"phone\": \"5550100\",\n  \"class\": \"Grade 1\",\n  \"section\": \"A\",\n  \"roll\": \"101\",\n  \"admissionDate\": \"2026-11-14\",\n  \"fatherName\": \"Postman Test Parent\",\n  \"fatherPhone\": \"5550101\",\n  \"motherName\": \"\",\n  \"motherPhone\": \"\",\n  \"guardianName\": \"Postman Test Parent\",\n  \"guardianPhone\": \"5550101\",\n  \"relationOfGuardian\": \"Father\",\n  \"currentAddress\": \"123 Postman Test Street, Example City\",\n  \"permanentAddress\": \"123 Postman Test Street, Example City\",\n  \"systemAccess\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/students/{{studentId}}"
+      }
+    },
+    {
+      "name": "Change student status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/students/{{studentId}}/status"
+      }
+    },
+    {
+      "name": "Delete created student",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Student deleted', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.unset('studentId');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/students/{{studentId}}"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5007/api/v1"
+    },
+    {
+      "key": "username",
+      "value": "admin@school-admin.com"
+    },
+    {
+      "key": "password",
+      "value": "3OU4zn3q6Zh9"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    },
+    {
+      "key": "testEmail",
+      "value": ""
+    }
+  ]
+}
